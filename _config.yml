@@ -11,8 +11,8 @@ email: j.klare@cloudbau.de
 description: > # this means to ignore newlines until "baseurl:"
   This is the official cloudbau blog and it`s articles are mainly about
   OpenStack, Automation and all the related topics.
-baseurl: "/blog" # the subpath of your site, e.g. /blog
-url: "https://cloudbau.de" # the base hostname & protocol for your site
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://blog.cloudbau.de" # the base hostname & protocol for your site
 twitter_username: cloudbau
 github_username:  cloudbau
 
