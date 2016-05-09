@@ -6,18 +6,16 @@ author:   Dr. Jens Rosenboom
 categories: openstack neutron networking
 ---
 
-# Providing globally routed IPv6 adresses to your OpenStack tenants^Wprojects
-
-## Motivation
+# Motivation
 
 With the runout of available IPv4 space, the importance of being able to
-use IPv6 addresses instead or at least in addition has been ever increasing.
+use IPv6 addresses instead of or at least in addition to IPv4 addresses has been ever increasing.
 Obviously this also applies to virtualized hosts deployed in OpenStack clouds.
 Now when it comes to the actual implementation within Neutron, there is a
 significant difference in the treatment of IPv4 and IPv6 that we will have to
 take into account for our deployment.
 
-## Legacy
+# Legacy
 
 OpenStack was born late enough in the history of the internet such that the
 runout of IPv4 was clearly visible on the horizon right from the start.
@@ -32,7 +30,7 @@ routed IPv4 addresses one at a time and setup NAT rules on a router automaticall
 such that traffic towards this address would end up on their instance within its
 private network.
 
-## A new hope
+# A new hope
 
 With IPv6 the use of NAT is strongly deprecated with the intention of allowing
 direct end-to-end connectivity between hosts. Thus the Neutron implementation
@@ -102,48 +100,48 @@ are multiple solutions available:
 Despite these issues, solution 2 seems to be best suited for deploying a public
 OpenStack cloud service.
 
-## Welcome to the real world
+# Welcome to the real world
 
 So let us take a look at how to configure your OpenStack cluster to utilize dynamic
 routing. We start by setting up an address-scope that will be used by the BGP agent in order
 to select the set of prefixes to be announced within the BGP sessions:
 
-       # neutron address-scope-create --shared address-scope-ip6 6
-       Created a new address_scope:
-       +------------+--------------------------------------+
-       | Field      | Value                                |
-       +------------+--------------------------------------+
-       | id         | 040256da-f8a9-4009-9062-043b70d9e8a6 |
-       | ip_version | 6                                    |
-       | name       | address-scope-ip6                    |
-       | shared     | True                                 |
-       | tenant_id  | 4a0a30294e954953a41a9791d4e7f437     |
-       +------------+--------------------------------------+
+    # neutron address-scope-create --shared address-scope-ip6 6
+    Created a new address_scope:
+    +------------+--------------------------------------+
+    | Field      | Value                                |
+    +------------+--------------------------------------+
+    | id         | 040256da-f8a9-4009-9062-043b70d9e8a6 |
+    | ip_version | 6                                    |
+    | name       | address-scope-ip6                    |
+    | shared     | True                                 |
+    | tenant_id  | 4a0a30294e954953a41a9791d4e7f437     |
+    +------------+--------------------------------------+
 
 Next we create the subnetpool that our projects will use to configure their subnets
 with:
 
-       # neutron subnetpool-create --address-scope address-scope-ip6 --shared --pool-prefix 2001:db8:1234::/48 --default-prefixlen 64 --max-prefixlen 64 --is-default true default-pool-ip6                                                                                                        
-       Created a new subnetpool:
-       +-------------------+--------------------------------------+
-       | Field             | Value                                |
-       +-------------------+--------------------------------------+
-       | address_scope_id  | 040256da-f8a9-4009-9062-043b70d9e8a6 |
-       | created_at        | 2016-04-27T08:19:27                  |
-       | default_prefixlen | 64                                   |
-       | default_quota     |                                      |
-       | description       |                                      |
-       | id                | 84367d47-4b17-4ffc-9240-e01695e604eb |
-       | ip_version        | 6                                    |
-       | is_default        | True                                 |
-       | max_prefixlen     | 64                                   |
-       | min_prefixlen     | 64                                   |
-       | name              | default-pool-ip6                     |
-       | prefixes          | 2001:db8:1234::/48                   |
-       | shared            | True                                 |
-       | tenant_id         | 4a0a30294e954953a41a9791d4e7f437     |
-       | updated_at        | 2016-04-27T08:19:27                  |
-       +-------------------+--------------------------------------+
+    # neutron subnetpool-create --address-scope address-scope-ip6 --shared --pool-prefix 2001:db8:1234::/48 --default-prefixlen 64 --max-prefixlen 64 --is-default true default-pool-ip6                                                                                                        
+    Created a new subnetpool:
+    +-------------------+--------------------------------------+
+    | Field             | Value                                |
+    +-------------------+--------------------------------------+
+    | address_scope_id  | 040256da-f8a9-4009-9062-043b70d9e8a6 |
+    | created_at        | 2016-04-27T08:19:27                  |
+    | default_prefixlen | 64                                   |
+    | default_quota     |                                      |
+    | description       |                                      |
+    | id                | 84367d47-4b17-4ffc-9240-e01695e604eb |
+    | ip_version        | 6                                    |
+    | is_default        | True                                 |
+    | max_prefixlen     | 64                                   |
+    | min_prefixlen     | 64                                   |
+    | name              | default-pool-ip6                     |
+    | prefixes          | 2001:db8:1234::/48                   |
+    | shared            | True                                 |
+    | tenant_id         | 4a0a30294e954953a41a9791d4e7f437     |
+    | updated_at        | 2016-04-27T08:19:27                  |
+    +-------------------+--------------------------------------+
 
 Our public network, i.e. the network that the gateway ports of the project routers
 will be connected to, needs to be configured with the same address_scope. As the
@@ -152,7 +150,6 @@ to assign the IPv6 subnet on the public network from the shared subnetpool we ju
 created, or we create a second subnetpool containing the specific prefix that we
 want to use for our public network:
 
-```
     # neutron subnetpool-create --address-scope address-scope-ip6 --pool-prefix 2001:db8:4321:42::/64 --default-prefixlen 64 public-pool
     Created a new subnetpool:
     +-------------------+--------------------------------------+
@@ -233,8 +230,7 @@ proper subnetpool:
     | updated_at                | 2016-04-26T09:44:10                  |
     +---------------------------+--------------------------------------+
 
-View from the other side
-------------------------
+# View from the other side
 
 We have now prepared everything on the admin side of things, so let our user start to configure their networking:
 
@@ -330,140 +326,157 @@ Note that most cloud images are built to insist on receiving an IPv4 address via
 while booting, so in order to avoid the resulting delay, you could add an IPv4 subnet
 to your project net.
 
-## Getting into advertising
+# Getting into advertising
 
 Up to this point most of the things we have done have been pretty standard, so let's
 get to the interesting stuff now. First we have to update our ``neutron.conf`` a bit:
 
-     [DEFAULT]
-     # You may have other plugins enabled here depending on your environment
-     # Important thing is you add "bgp" to the list
-     service_plugins = bgp, router
-     # In case you run into issues, this will also be helpful
-     debug = true
+    [DEFAULT]
+    # You may have other plugins enabled here depending on your environment
+    # Important thing is you add "bgp" to the list
+    service_plugins = bgp, router
+    # In case you run into issues, this will also be helpful
+    debug = true
 
 You need to restart your ``neutron-server`` process(es) in order activate the plugin.
 Now we can create our first BGP speaker. We set the IP version to 6, select some
 private ASN that we can use for our POC and disable advertising floating IPs, as we
 do not have these for IPv6 anyway:
 
-     # neutron bgp-speaker-create --ip-version 6 --local-as 65001 --advertise-floating-ip-host-routes false bgp1
-     Created a new bgp_speaker:
-     +-----------------------------------+--------------------------------------+
-     | Field                             | Value                                |
-     +-----------------------------------+--------------------------------------+
-     | advertise_floating_ip_host_routes | False                                |
-     | advertise_tenant_networks         | True                                 |
-     | id                                | 09fc7063-89e1-4949-812d-b52eb7eee430 |
-     | ip_version                        | 6                                    |
-     | local_as                          | 65001                                |
-     | name                              | bgp1                                 |
-     | networks                          |                                      |
-     | peers                             |                                      |
-     | tenant_id                         | 4a0a30294e954953a41a9791d4e7f437     |
-     +-----------------------------------+--------------------------------------+
+    # neutron bgp-speaker-create --ip-version 6 --local-as 65001 --advertise-floating-ip-host-routes false bgp1
+    Created a new bgp_speaker:
+    +-----------------------------------+--------------------------------------+
+    | Field                             | Value                                |
+    +-----------------------------------+--------------------------------------+
+    | advertise_floating_ip_host_routes | False                                |
+    | advertise_tenant_networks         | True                                 |
+    | id                                | 09fc7063-89e1-4949-812d-b52eb7eee430 |
+    | ip_version                        | 6                                    |
+    | local_as                          | 65001                                |
+    | name                              | bgp1                                 |
+    | networks                          |                                      |
+    | peers                             |                                      |
+    | tenant_id                         | 4a0a30294e954953a41a9791d4e7f437     |
+    +-----------------------------------+--------------------------------------+
 
 We add our public network to this speaker, indicating that we want to advertise all those
 tenant networks here, which have a router with the public network as gateway. We also
 verify that our tenant network gets listed for advertisement:
 
-     # neutron bgp-speaker-network-add bgp1 public
-     Added network public to BGP speaker bgp1.
-     # neutron bgp-speaker-advertiseroute-list bgp1
-     +----------------------+---------------------+
-     | destination          | next_hop            |
-     +----------------------+---------------------+
-     | 2001:db8:1234:1::/64 | 2001:db8:4321:42::5 |
-     +----------------------+---------------------+
+    # neutron bgp-speaker-network-add bgp1 public
+    Added network public to BGP speaker bgp1.
+    # neutron bgp-speaker-advertiseroute-list bgp1
+    +----------------------+---------------------+
+    | destination          | next_hop            |
+    +----------------------+---------------------+
+    | 2001:db8:1234:1::/64 | 2001:db8:4321:42::5 |
+    +----------------------+---------------------+
 
 Assume our external router has the address 2001:db8:4321:e0::1, we configure it as
 BGP peer and add it to our BGP speaker:
 
-     # neutron bgp-peer-create --peer-ip 2001:db8:4321:e0::1 --remote-as 65001 bgp-peer1
-     Created a new bgp_peer:
-     +-----------+--------------------------------------+
-     | Field     | Value                                |
-     +-----------+--------------------------------------+
-     | auth_type | none                                 |
-     | id        | f6461ba4-aac9-41a9-8783-b93570e0a768 |
-     | name      | bgp-peer1                            |
-     | peer_ip   | 2001:db8:4321:e0::1                  |
-     | remote_as | 65001                                |
-     | tenant_id | 4a0a30294e954953a41a9791d4e7f437     |
-     +-----------+--------------------------------------+
-     # neutron bgp-speaker-peer-add bgp1 bgp-peer1
-     Added BGP peer bgp-peer1 to BGP speaker bgp1.
+    # neutron bgp-peer-create --peer-ip 2001:db8:4321:e0::1 --remote-as 65001 bgp-peer1
+    Created a new bgp_peer:
+    +-----------+--------------------------------------+
+    | Field     | Value                                |
+    +-----------+--------------------------------------+
+    | auth_type | none                                 |
+    | id        | f6461ba4-aac9-41a9-8783-b93570e0a768 |
+    | name      | bgp-peer1                            |
+    | peer_ip   | 2001:db8:4321:e0::1                  |
+    | remote_as | 65001                                |
+    | tenant_id | 4a0a30294e954953a41a9791d4e7f437     |
+    +-----------+--------------------------------------+
+    # neutron bgp-speaker-peer-add bgp1 bgp-peer1
+    Added BGP peer bgp-peer1 to BGP speaker bgp1.
 
-## The missing link
+# The missing link
 
 So all that it left now is to setup the agent that will start the BGP session and
 advertise the prefixes to the outside world. On the network node, install the
 necessary packages, e.g. for Ubuntu Xenial:
 
-       # apt install neutron-bgp-dragent python-ryu
+    # apt install neutron-bgp-dragent python-ryu
 
 This will also add a configuration file at ``/etc/neutron/bgp_dragent.ini`` which
 needs some tuning:
 
-     [BGP]
-     # BGP speaker driver class to be instantiated. (string value)
-     bgp_speaker_driver = neutron.services.bgp.driver.ryu.driver.RyuBgpDriver
+    [BGP]
+    # BGP speaker driver class to be instantiated. (string value)
+    bgp_speaker_driver = neutron.services.bgp.driver.ryu.driver.RyuBgpDriver
 
-     # 32-bit BGP identifier, typically an IPv4 address owned by the system running
-     # the BGP DrAgent. (string value)
-     bgp_router_id = 10.11.12.13
+    # 32-bit BGP identifier, typically an IPv4 address owned by the system running
+    # the BGP DrAgent. (string value)
+    bgp_router_id = 10.11.12.13
 
 Again you will have to restart the agent in order for it to pick up the new
 configuration. If all goes well, the agent should register itself in your setup:
 
-     # neutron agent-list
-     +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
-     | id                                   | agent_type                | host         | availability_zone | alive | admin_state_up | binary                    |
-     +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
-     | 12780c43-084c-4417-aa7f-2e1c505639ab | L3 agent                  | network-node | nova              | :-)   | True           | neutron-l3-agent          |
-     | 3f427d52-d2b3-46ee-b372-f83b6f9a3474 | Open vSwitch agent        | compute-node |                   | :-)   | True           | neutron-openvswitch-agent |
-     | 5c089ce4-9d6d-4aff-835a-34c3ad1c7b8d | DHCP agent                | network-node | nova              | :-)   | True           | neutron-dhcp-agent        |
-     | 68d6e83c-db04-4711-b031-44cf3fb51bb7 | BGP dynamic routing agent | network-node |                   | :-)   | True           | neutron-bgp-dragent       |
-     +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
+    # neutron agent-list
+    +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
+    | id                                   | agent_type                | host         | availability_zone | alive | admin_state_up | binary                    |
+    +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
+    | 12780c43-084c-4417-aa7f-2e1c505639ab | L3 agent                  | network-node | nova              | :-)   | True           | neutron-l3-agent          |
+    | 3f427d52-d2b3-46ee-b372-f83b6f9a3474 | Open vSwitch agent        | compute-node |                   | :-)   | True           | neutron-openvswitch-agent |
+    | 5c089ce4-9d6d-4aff-835a-34c3ad1c7b8d | DHCP agent                | network-node | nova              | :-)   | True           | neutron-dhcp-agent        |
+    | 68d6e83c-db04-4711-b031-44cf3fb51bb7 | BGP dynamic routing agent | network-node |                   | :-)   | True           | neutron-bgp-dragent       |
+    +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
 
 As the final step, use the agent id from above and tell the agent that it
 should host our BGP speaker:
 
-     # neutron bgp-dragent-speaker-add 68d6e83c-db04-4711-b031-44cf3fb51bb7 bgp1
-     Associated BGP speaker bgp1 to the Dynamic Routing agent.
+    # neutron bgp-dragent-speaker-add 68d6e83c-db04-4711-b031-44cf3fb51bb7 bgp1
+    Associated BGP speaker bgp1 to the Dynamic Routing agent.
 
 And that will be all. Well, at least from the OpenStack side of things.
 
-## The view from the outside
+# The view from the outside
 
 Of course you will want to verify that everything works fine on your external router, too.
 So in our case we have a system running [BIRD](http://bird.network.cz/), which
 we configure to be the remote end of the BGP session like this:
 
-     protocol bgp {
-       local as 65001;
-       neighbor 2001:db8:4321:e0::42 as 65001;
-     }
+    protocol bgp {
+      local as 65001;
+      neighbor 2001:db8:4321:e0::42 as 65001;
+    }
 
 Verify that the session gets established and our prefix is seen as expected:
 
-     bird> show proto bgp1
-     name     proto    table    state  since       info
-     bgp1     BGP      master   up     12:06:50    Established   
-     bird> show route 2001:db8:1234:1::/64
-     2001:db8:1234:1::/64 via 2001:db8:4321:2::5 on ens3 [bgp1 12:06:50 from 2001:db8:4321:e0::42] * (100/0) [i]
+    bird> show proto bgp1
+    name     proto    table    state  since       info
+    bgp1     BGP      master   up     12:06:50    Established   
+    bird> show route 2001:db8:1234:1::/64
+    2001:db8:1234:1::/64 via 2001:db8:4321:2::5 on ens3 [bgp1 12:06:50 from 2001:db8:4321:e0::42] * (100/0) [i]
 
 As extra bonus, verify that the instance we created earlier is reachable from our router:
 
-     router01:~$ ping6 -c3  2001:db8:1234:1:f816:3eff:fecd:6bf4
-     PING 2001:db8:1234:1:f816:3eff:fecd:6bf4(2001:db8:1234:1:f816:3eff:fecd:6bf4) 56 data bytes
-     64 bytes from 2001:db8:1234:1:f816:3eff:fecd:6bf4: icmp_seq=1 ttl=63 time=1.80 ms
-     64 bytes from 2001:db8:1234:1:f816:3eff:fecd:6bf4: icmp_seq=2 ttl=63 time=0.724 ms
-     64 bytes from 2001:db8:1234:1:f816:3eff:fecd:6bf4: icmp_seq=3 ttl=63 time=1.04 ms
+    router01:~$ ping6 -c3  2001:db8:1234:1:f816:3eff:fecd:6bf4
+    PING 2001:db8:1234:1:f816:3eff:fecd:6bf4(2001:db8:1234:1:f816:3eff:fecd:6bf4) 56 data bytes
+    64 bytes from 2001:db8:1234:1:f816:3eff:fecd:6bf4: icmp_seq=1 ttl=63 time=1.80 ms
+    64 bytes from 2001:db8:1234:1:f816:3eff:fecd:6bf4: icmp_seq=2 ttl=63 time=0.724 ms
+    64 bytes from 2001:db8:1234:1:f816:3eff:fecd:6bf4: icmp_seq=3 ttl=63 time=1.04 ms
 
-     --- 2001:db8:1234:1:f816:3eff:fecd:6bf4 ping statistics ---
-     3 packets transmitted, 3 received, 0% packet loss, time 2000ms
-     rtt min/avg/max/mdev = 0.724/1.190/1.803/0.454 ms
-     router01:~$ ssh -6 2001:db8:1234:1:f816:3eff:fe58:f80a -l cirros
-     cirros@2001:db8:1234:1:f816:3eff:fe58:f80a's password: 
-     $ 
+    --- 2001:db8:1234:1:f816:3eff:fecd:6bf4 ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2000ms
+    rtt min/avg/max/mdev = 0.724/1.190/1.803/0.454 ms
+    router01:~$ ssh -6 2001:db8:1234:1:f816:3eff:fe58:f80a -l cirros
+    cirros@2001:db8:1234:1:f816:3eff:fe58:f80a's password: 
+    $ 
+
+# Caveats
+
+In case that things do not work out as expected, here are a couple of things you might check:
+
+- Security group rules for your instances need to be duplicated for IPv6. So even if you did allow
+  SSH access via IPv4 (the default selection) already, you will need to add another rule in order
+  to allow access via IPv6, too.
+- Nova metadata are available via IPv4 only. So if you deploy an instance that has only an IPv6
+  address, it will not be able to receive e.g. the SSH keys that should be installed. Either use
+  config drive for that or enable a dummy IPv4 network that will allow connectivity to the
+  metadata server.
+- Most pre-built cloud images are also hardcoded to wait during the boot phase until they have
+  received an IPv4 address on their primary interface via DHCP. If you want to avoid this delay
+  (which can mean it takes a couple of minutes until you are able to access your instance), you
+  either have to build your own image that does some smarter network setup or again you setup
+  your dummy IPv4 network.
