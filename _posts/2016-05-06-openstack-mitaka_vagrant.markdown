@@ -36,11 +36,13 @@ case you wonder why we are not using the most recent version: We tested with
 0.9.0 during the whole development and it still works and somebody said "never
 change a winning team".
 
+> It is also needed to install the latest version of [Vagrant](https://www.vagrantup.com/downloads.html) (and VirtualBox?)
+
 If you have prepared all the things mentioned above and already some appetite
 for a nice and tasty OpenStack, you should go ahead and continue with the next
 steps.
 
-## Mise en Place 
+## Mise en Place
 
 To get started you should cd to the openstack-chef-repo you pulled before and
 have a quick look at some of the core documents we will use during the actual
@@ -134,6 +136,7 @@ The first thing we want to do here, is to allow all nodes to
 network traffic. This is needed, since we want to run our routers and dhcp
 namespaces on the controller and connect them via openvswitch (ovs) bridges to
 the instances running on the two compute nodes.
+
 #### endpoints
 To actually allow all the OpenStack services to talk to each other, either
 via the [message
@@ -147,6 +150,7 @@ and the mq. With this configuration, all of the OpenStack service APIs will be
 reachable via their default ports (e.g. [9696 for
 neutron](https://github.com/openstack/cookbook-openstack-network/blob/master/attributes/default.rb#L34))
 on the address '192.168.101.60' (e.g. '192.168.101.60:9696' for neutron).
+
 #### binding services
 Right below the endpoint setting, we see a whole block that looks quite similar
 to the endpoint one, but is called
@@ -241,7 +245,7 @@ Most people like to start with the good looking stuff, so we will go ahead and
 navigate to the
 [dashboard](http://docs.openstack.org/user-guide/dashboard_log_in.html), which
 should be accessible on
-[http://localhost:9443](http://localhost:9443). You can log in as the 'admin'
+[http://localhost:9443](https://localhost:9443). You can log in as the 'admin'
 user with the password 'mypass'.
 
 You should really enjoy this part a bit longer, maybe [create some
