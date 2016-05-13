@@ -22,24 +22,24 @@ and fancy automation and orchestration technologies.
 
 # Impressum
 
-cloudbau GmbH
-Marschnerstraße 52
+cloudbau GmbH  
+Marschnerstraße 52  
 22081 Hamburg
 
-Telefax: +49 40 609429592 
-E-Mail: auskunft@cloudbau.de 
+Telefax: +49 40 609429592  
+E-Mail: auskunft@cloudbau.de  
 Internet: www.cloudbau.de
 
-Vertretungsberechtigter Geschäftsführer: 
+Vertretungsberechtigter Geschäftsführer:  
 Martin Bosner
 
-Registergericht: Amtsgericht Lübeck
-Registernummer: HRB 13 50 8 HL
-Steuernummer: 43/711/01670 
-Inhaltlich Verantwortlicher gemäß § 55 Abs. 2 RStV: 
-Martin Bosner (Anschrift wie oben)
+Registergericht: Amtsgericht Lübeck  
+Registernummer: HRB 13 50 8 HL  
+Steuernummer: 43/711/01670  
+Inhaltlich Verantwortlicher gemäß § 55 Abs. 2 RStV:  
+Martin Bosner (Anschrift wie oben)  
 
-Haftung für Inhalte und Links
+Haftung für Inhalte und Links  
 Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die
 Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich
 deren Betreiber verantwortlich.
