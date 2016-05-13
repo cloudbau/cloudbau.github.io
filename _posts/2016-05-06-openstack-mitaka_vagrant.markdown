@@ -1,7 +1,7 @@
 ---
 layout:   post
 title:    'Cooking some "Mitaka" flavoured OpenStack on your local machine'
-date:     2016-05-06 16:48:02 +0200
+date:     2016-05-13 16:48:02 +0200
 author:   Jan Klare
 categories: openstack
 ---
@@ -22,6 +22,10 @@ kitchen lacks some of these equipments, you can still try, but there is no
 guarantee that you will be able to cook the same cluster we are going for
 without running out of resources.
 
+We will be using [virtualbox](https://www.virtualbox.org/) and
+[vagrant](https://www.vagrantup.com/) and before you start you should get and
+install them according to the guides for your platform.
+
 In addition to the kitchen itself we will need a whole bunch of cookbooks, but
 luckily you can get all of them at a one-stop-berkself directly from the
 [openstack-chef-repo](https://github.com/openstack/openstack-chef-repo). Just
@@ -40,7 +44,7 @@ If you have prepared all the things mentioned above and already some appetite
 for a nice and tasty OpenStack, you should go ahead and continue with the next
 steps.
 
-## Mise en Place 
+## Mise en Place
 
 To get started you should cd to the openstack-chef-repo you pulled before and
 have a quick look at some of the core documents we will use during the actual
@@ -134,6 +138,7 @@ The first thing we want to do here, is to allow all nodes to
 network traffic. This is needed, since we want to run our routers and dhcp
 namespaces on the controller and connect them via openvswitch (ovs) bridges to
 the instances running on the two compute nodes.
+
 #### endpoints
 To actually allow all the OpenStack services to talk to each other, either
 via the [message
@@ -147,6 +152,7 @@ and the mq. With this configuration, all of the OpenStack service APIs will be
 reachable via their default ports (e.g. [9696 for
 neutron](https://github.com/openstack/cookbook-openstack-network/blob/master/attributes/default.rb#L34))
 on the address '192.168.101.60' (e.g. '192.168.101.60:9696' for neutron).
+
 #### binding services
 Right below the endpoint setting, we see a whole block that looks quite similar
 to the endpoint one, but is called
@@ -241,7 +247,7 @@ Most people like to start with the good looking stuff, so we will go ahead and
 navigate to the
 [dashboard](http://docs.openstack.org/user-guide/dashboard_log_in.html), which
 should be accessible on
-[http://localhost:9443](http://localhost:9443). You can log in as the 'admin'
+[http://localhost:9443](https://localhost:9443). You can log in as the 'admin'
 user with the password 'mypass'.
 
 You should really enjoy this part a bit longer, maybe [create some
