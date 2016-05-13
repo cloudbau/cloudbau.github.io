@@ -4,6 +4,7 @@ title:    'Cooking some "Mitaka" flavoured OpenStack on your local machine'
 date:     2016-05-13 16:48:02 +0200
 author:   Jan Klare
 categories: openstack
+published: false
 ---
 
 # Cooking some "Mitaka" flavoured OpenStack on your local machine
@@ -235,6 +236,13 @@ chef exec rake berks_vendor
 chef exec rake multi_node
 ```
 
+> ### NOTICE!
+> If your first chef run fails while installing the package "cinder-common",
+> you are probably on a mac and there seems to be strange issue with handing
+> over the locales during a chef run. Just start the run again with:
+
+> ```chef exec rake multi_node```
+
 You should now get yourself a coffee and maybe even some fresh air, since this
 will take a while.
 
@@ -243,11 +251,25 @@ will take a while.
 After roundabout 15-20 minutes, depending on your kitchen hardware, you will
 have a full OpenStack Mitaka ready for consumption. Now lets dig into it!
 
+> ### NOTICE!
+> At the time of writing, there is a rather unpleasent bug in the startup of
+> libvirt-bin, since the default logging service virtlogd seems to be started but
+> instantly crashes. The bug is documented on
+> [launchpad](https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/1577455) and
+> can simply be fixed by starting the service virtlogd manually or restarting the
+> whole compute nodes.  To start the service manually ssh to the compute1 and
+> compute2 and run:
+
+> ```sudo service virtlogd start```
+
+> After that you should be good to go.
+
+
 Most people like to start with the good looking stuff, so we will go ahead and
 navigate to the
 [dashboard](http://docs.openstack.org/user-guide/dashboard_log_in.html), which
 should be accessible on
-[http://localhost:9443](https://localhost:9443). You can log in as the 'admin'
+[https://localhost:9443](https://localhost:9443). You can log in as the 'admin'
 user with the password 'mypass'.
 
 You should really enjoy this part a bit longer, maybe [create some

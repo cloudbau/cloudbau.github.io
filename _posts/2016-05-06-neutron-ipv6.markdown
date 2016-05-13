@@ -4,6 +4,7 @@ title:    'Providing globally routed IPv6 adresses to your OpenStack tenants^Wpr
 date:     2016-05-06 16:48:02 +0200
 author:   Dr. Jens Rosenboom
 categories: openstack neutron networking
+published: false
 ---
 
 # Motivation
