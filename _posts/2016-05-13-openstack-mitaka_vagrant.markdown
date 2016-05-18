@@ -3,7 +3,7 @@ layout:   post
 title:    'Cooking some "Mitaka" flavoured OpenStack on your local machine'
 date:     2016-05-13 16:48:02 +0200
 author:   Jan Klare
-categories: openstack
+categories: openstack chef
 published: false
 ---
 
