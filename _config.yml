@@ -20,3 +20,4 @@ github_username:  cloudbau
 markdown: kramdown
 gems:
   - jekyll-sitemap
+  - jekyll-feed
