@@ -22,7 +22,7 @@ runout of IPv4 was clearly visible on the horizon right from the start.
 Therefore, the way "private" per-project networks were built was based on the
 assumption that projects could choose any IPv4 range for their network that they
 happened to like, because it would have no direct connectivity to the public
-internet anyway. 
+internet anyway.
 
 Then, in order to still allow access to instances from the internet, the concept
 of *Floating IP addresses* was introduced, allowing projects to receive globally
@@ -121,7 +121,7 @@ to select the set of prefixes to be announced within the BGP sessions:
 Next we create the subnetpool that our projects will use to configure their subnets
 with:
 
-    # neutron subnetpool-create --address-scope address-scope-ip6 --shared --pool-prefix 2001:db8:1234::/48 --default-prefixlen 64 --max-prefixlen 64 --is-default true default-pool-ip6                                                                                                        
+    # neutron subnetpool-create --address-scope address-scope-ip6 --shared --pool-prefix 2001:db8:1234::/48 --default-prefixlen 64 --max-prefixlen 64 --is-default true default-pool-ip6
     Created a new subnetpool:
     +-------------------+--------------------------------------+
     | Field             | Value                                |
@@ -318,7 +318,7 @@ Finally we boot an instance and verify that it gets an IPv6 address assigned:
     | 17b2ac04-9a17-45ff-be30-401aa8331a66 | vm1  | ACTIVE | -          | Running     | pronet=2001:db8:1234:1:f816:3eff:fe53:f89e  |
     +--------------------------------------+------+--------+------------+-------------+---------------------------------------------+
     $ nova console-log vm1 | grep -A1 -B1 2001
-    eth0      Link encap:Ethernet  HWaddr FA:16:3E:53:F8:9E  
+    eth0      Link encap:Ethernet  HWaddr FA:16:3E:53:F8:9E
               inet6 addr: 2001:db8:1234:1:f816:3eff:fe53:f89e/64 Scope:Global
               inet6 addr: fe80::f816:3eff:fe53:f89e/64 Scope:Link
 
@@ -445,7 +445,7 @@ Verify that the session gets established and our prefix is seen as expected:
 
     bird> show proto bgp1
     name     proto    table    state  since       info
-    bgp1     BGP      master   up     12:06:50    Established   
+    bgp1     BGP      master   up     12:06:50    Established
     bird> show route 2001:db8:1234:1::/64
     2001:db8:1234:1::/64 via 2001:db8:4321:2::5 on ens3 [bgp1 12:06:50 from 2001:db8:4321:e0::42] * (100/0) [i]
 
@@ -461,8 +461,8 @@ As extra bonus, verify that the instance we created earlier is reachable from ou
     3 packets transmitted, 3 received, 0% packet loss, time 2000ms
     rtt min/avg/max/mdev = 0.724/1.190/1.803/0.454 ms
     router01:~$ ssh -6 2001:db8:1234:1:f816:3eff:fe58:f80a -l cirros
-    cirros@2001:db8:1234:1:f816:3eff:fe58:f80a's password: 
-    $ 
+    cirros@2001:db8:1234:1:f816:3eff:fe58:f80a's password:
+    $
 
 # Caveats
 
