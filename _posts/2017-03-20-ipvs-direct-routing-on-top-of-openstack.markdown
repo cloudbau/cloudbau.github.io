@@ -173,3 +173,26 @@ Since this was only our first testing setup with this technology, we are still
 investigating if it fits all our needs and scales/performs as well as we
 currently believe. In addition to that, we will also look a bit deeper into the
 proxy-protocol mentioned in the beginning to see if this is a better fit here.
+
+# UPDATE 2017-03-24
+
+After some more testing, we figured out that this scenario only works if one
+completely disables the iptables/port-security for all incoming connections on
+the ipvs-loadbalancer. In our testing case it happend to work with
+port-security, since all instances were located on the same hypervisor. It
+instantly stopped working as soon as we moved one of the apache2 servers to
+another hypervisor. After spending some time in debugging, we figured out that
+this is actually caused by the way tcp and iptables themselves work. Usually the
+iptables are implemented directly on the bridge before the tap interfaces of the
+instances. If all instances are on the same hypervisor, all packets cross the
+same bridge. Therefore there will be a SYN (client to loadbalancer and
+loadbalancer to apache2-server) and an ACK (apache2-server to client) on the
+same bridge and the connection is marked as "ESTABLISHED" by iptables, which
+will allow you to send more packets. If the loadbalancer and apache2 are on
+different hypervisors, the bridge before the tap interface of the loadbalancer
+will only forward the SYN, but never see an ACK and therefore all further
+packets will be marked as "INVALID" by iptables and dropped. Of course this only
+means that you need to disable port-security for the loadbalancer, since the
+bridge connected to the tap interface of the apache2-server will forward the SYN
+(forwarded from the loadbalancer) as well as the ACK (directed to the client)
+and the connection will be marked "ESTABLISHED"
