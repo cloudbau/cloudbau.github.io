@@ -9,7 +9,7 @@
 title: The cloudbau blog
 email: j.klare@cloudbau.de
 description: > # this means to ignore newlines until "baseurl:"
-  This is the official cloudbau blog and it`s articles are mainly about
+  This is the official cloudbau blog and its articles are mainly about
   OpenStack, Automation and all the related topics.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://cloudbau.github.io" # the base hostname & protocol for your site
