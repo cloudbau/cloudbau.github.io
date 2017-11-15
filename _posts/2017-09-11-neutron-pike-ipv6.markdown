@@ -1,10 +1,20 @@
 ---
 layout:   post
-title:    'Providing globally routed IPv6 adresses to your OpenStack tenants^Wprojects'
-date:     2016-05-17 11:20:00 +0200
-author:   Dr. Jens Rosenboom
-categories: openstack neutron networking
+title:    'Providing globally routed IPv6 adresses to your OpenStack Pike projects'
+date:     2017-09-11 13:42:02 +0200
+author:   Dr. Jens Harbott
+categories: openstack neutron networking ipv6
 ---
+
+# Note
+
+This is an updated version of an earlier post of mine, taking into account the
+changes that have taken place from the Mitaka release, on which the original text
+was based, upto the now freshly released Pike version of OpenStack.
+
+The major difference is the use of ``openstack`` commands where available instead
+of relying only on python-neutronclient. There are some gaps in functionality
+that still need to be closed, though, so the transition is not yet complete.
 
 # Motivation
 
@@ -71,7 +81,7 @@ are multiple solutions available:
       there inserting some manual intervention into a process that should be able
       to be orchestrated in a dynamic fashion should best be avoided.
 1. Use *prefix delegation*. This is a way of handing out slices out of a predefined
-      subnet-pool where the delegation process is not done internally by Newton, but
+      subnet-pool where the delegation process is not done internally by Neutron, but
       instead we would set up an external DHCPv6 server providing this functionality.
       That server will then also setup routing between itself and the project routers.
       Again, there are some drawbacks:
@@ -104,220 +114,246 @@ OpenStack cloud service.
 
 So let us take a look at how to configure your OpenStack cluster to utilize dynamic
 routing. We start by setting up an address-scope that will be used by the BGP agent in order
-to select the set of prefixes to be announced within the BGP sessions:
+to select the set of prefixes to be announced within the BGP sessions. All commands shown
+in this section will require you to have admin credentials available:
 
-    # neutron address-scope-create --shared address-scope-ip6 6
-    Created a new address_scope:
+    $ openstack address scope create --share --ip-version 6 address-scope-ip6
     +------------+--------------------------------------+
     | Field      | Value                                |
     +------------+--------------------------------------+
-    | id         | 040256da-f8a9-4009-9062-043b70d9e8a6 |
+    | id         | ee2ee196-156c-424e-81e5-4d029c66190a |
     | ip_version | 6                                    |
     | name       | address-scope-ip6                    |
+    | project_id | 6de6f29dcf904ab8a12e8ca558f532e9     |
     | shared     | True                                 |
-    | tenant_id  | 4a0a30294e954953a41a9791d4e7f437     |
     +------------+--------------------------------------+
 
 Next we create the subnetpool that our projects will use to configure their subnets
 with:
 
-    # neutron subnetpool-create --address-scope address-scope-ip6 --shared --pool-prefix 2001:db8:1234::/48 --default-prefixlen 64 --max-prefixlen 64 --is-default true default-pool-ip6
-    Created a new subnetpool:
+    $ openstack subnet pool create --address-scope address-scope-ip6 --share --default --pool-prefix 2001:db8:1234::/48 --default-prefix-length 64 --max-prefix-length 64 default-pool-ip6
     +-------------------+--------------------------------------+
     | Field             | Value                                |
     +-------------------+--------------------------------------+
-    | address_scope_id  | 040256da-f8a9-4009-9062-043b70d9e8a6 |
-    | created_at        | 2016-04-27T08:19:27                  |
+    | address_scope_id  | ee2ee196-156c-424e-81e5-4d029c66190a |
+    | created_at        | 2017-02-24T15:28:27Z                 |
     | default_prefixlen | 64                                   |
-    | default_quota     |                                      |
+    | default_quota     | None                                 |
     | description       |                                      |
-    | id                | 84367d47-4b17-4ffc-9240-e01695e604eb |
+    | id                | 4c1661ba-b24c-4fda-8815-3f1fd29281af |
     | ip_version        | 6                                    |
     | is_default        | True                                 |
     | max_prefixlen     | 64                                   |
     | min_prefixlen     | 64                                   |
     | name              | default-pool-ip6                     |
     | prefixes          | 2001:db8:1234::/48                   |
+    | project_id        | 6de6f29dcf904ab8a12e8ca558f532e9     |
+    | revision_number   | 1                                    |
     | shared            | True                                 |
-    | tenant_id         | 4a0a30294e954953a41a9791d4e7f437     |
-    | updated_at        | 2016-04-27T08:19:27                  |
+    | updated_at        | 2017-02-24T15:28:27Z                 |
     +-------------------+--------------------------------------+
 
 Our public network, i.e. the network that the gateway ports of the project routers
-will be connected to, needs to be configured with the same address_scope. As the
+will be connected to, needs to be configured with the same address-scope. As the
 address scope can only be assigned via subnetpools and not directly, we either have
 to assign the IPv6 subnet on the public network from the shared subnetpool we just
 created, or we create a second subnetpool containing the specific prefix that we
 want to use for our public network:
 
-    # neutron subnetpool-create --address-scope address-scope-ip6 --pool-prefix 2001:db8:4321:42::/64 --default-prefixlen 64 public-pool
-    Created a new subnetpool:
+    $ openstack subnet pool create --address-scope address-scope-ip6 --pool-prefix 2001:db8:4321:42::/64 --default-prefix-length 64 public-pool
     +-------------------+--------------------------------------+
     | Field             | Value                                |
     +-------------------+--------------------------------------+
-    | address_scope_id  | 040256da-f8a9-4009-9062-043b70d9e8a6 |
-    | created_at        | 2016-04-27T08:22:19                  |
+    | address_scope_id  | ee2ee196-156c-424e-81e5-4d029c66190a |
+    | created_at        | 2017-02-27T10:13:38Z                 |
     | default_prefixlen | 64                                   |
-    | default_quota     |                                      |
+    | default_quota     | None                                 |
     | description       |                                      |
-    | id                | 4240ea15-ee8e-4af4-ad68-dc1c97e2b54d |
+    | id                | 56a1b34b-7e0a-4a76-aac9-8893314ee2a4 |
     | ip_version        | 6                                    |
     | is_default        | False                                |
     | max_prefixlen     | 128                                  |
     | min_prefixlen     | 64                                   |
     | name              | public-pool                          |
     | prefixes          | 2001:db8:4321:42::/64                |
+    | project_id        | 6de6f29dcf904ab8a12e8ca558f532e9     |
+    | revision_number   | 1                                    |
     | shared            | False                                |
-    | tenant_id         | 4a0a30294e954953a41a9791d4e7f437     |
-    | updated_at        | 2016-04-27T08:22:19                  |
+    | updated_at        | 2017-02-27T10:13:38Z                 |
     +-------------------+--------------------------------------+
 
 Now we can create our public network and the IPv6 subnet on it:
 
-    # neutron net-create --provider:network_type flat --provider:physical_network external --router:external=True public
+    $ openstack network create --provider-network-type flat --provider-physical-network public --external public
     <output skipped>
-    # neutron subnet-create --name public-ip6 --ip_version 6 --subnetpool public-pool public
-    Created a new subnet:
-    +-------------------+---------------------------------------------------------------------------------+
-    | Field             | Value                                                                           |
-    +-------------------+---------------------------------------------------------------------------------+
-    | allocation_pools  | {"start": "2001:db8:4321:42::2", "end": "2001:db8:4321:42:ffff:ffff:ffff:ffff"} |
-    | cidr              | 2001:db8:4321:42::/64                                                           |
-    | created_at        | 2016-04-27T08:23:33                                                             |
-    | description       |                                                                                 |
-    | dns_nameservers   |                                                                                 |
-    | enable_dhcp       | True                                                                            |
-    | gateway_ip        | 2001:db8:4321:42::1                                                             |
-    | host_routes       |                                                                                 |
-    | id                | 98cd2ae1-cf7d-48f3-b5e0-c94efe3c2562                                            |
-    | ip_version        | 6                                                                               |
-    | ipv6_address_mode |                                                                                 |
-    | ipv6_ra_mode      |                                                                                 |
-    | name              | public-ip6                                                                      |
-    | network_id        | 75d2c0d9-4343-4ac7-8dbe-b72893267201                                            |
-    | subnetpool_id     | 4240ea15-ee8e-4af4-ad68-dc1c97e2b54d                                            |
-    | tenant_id         | 4a0a30294e954953a41a9791d4e7f437                                                |
-    | updated_at        | 2016-04-27T08:23:33                                                             |
-    +-------------------+---------------------------------------------------------------------------------+
+    $ openstack subnet create --ip-version 6 --subnet-pool public-pool --network public public-ip6
+    +-------------------+----------------------------------------------------------+
+    | Field             | Value                                                    |
+    +-------------------+----------------------------------------------------------+
+    | allocation_pools  | 2001:db8:4321:42::2-2001:db8:4321:42:ffff:ffff:ffff:ffff |
+    | cidr              | 2001:db8:4321:42::/64                                    |
+    | created_at        | 2017-02-27T10:23:00Z                                     |
+    | description       |                                                          |
+    | dns_nameservers   |                                                          |
+    | enable_dhcp       | True                                                     |
+    | gateway_ip        | 2001:db8:4321:42::1                                      |
+    | host_routes       |                                                          |
+    | id                | 77551166-fb97-4ea5-912a-c17c75a05eda                     |
+    | ip_version        | 6                                                        |
+    | ipv6_address_mode | None                                                     |
+    | ipv6_ra_mode      | None                                                     |
+    | name              | public-ip6                                               |
+    | network_id        | 28c08355-cb8f-4b1b-b5fd-f5442e531b28                     |
+    | project_id        | 6de6f29dcf904ab8a12e8ca558f532e9                         |
+    | revision_number   | 2                                                        |
+    | segment_id        | None                                                     |
+    | service_types     |                                                          |
+    | subnetpool_id     | 56a1b34b-7e0a-4a76-aac9-8893314ee2a4                     |
+    | updated_at        | 2017-02-27T10:23:00Z                                     |
+    +-------------------+----------------------------------------------------------+
 
-Verify that the address_scope for IPv6 indeed got set for this network via creating the subnet from the
+Verify that the address-scope for IPv6 indeed got set for this network via creating the subnet from the
 proper subnetpool:
 
-    # neutron net-show public
+    $ openstack network show public
     +---------------------------+--------------------------------------+
     | Field                     | Value                                |
     +---------------------------+--------------------------------------+
-    | admin_state_up            | True                                 |
+    | admin_state_up            | UP                                   |
     | availability_zone_hints   |                                      |
-    | availability_zones        | nova                                 |
-    | created_at                | 2016-04-26T09:44:10                  |
+    | availability_zones        |                                      |
+    | created_at                | 2017-02-27T10:21:04Z                 |
     | description               |                                      |
-    | id                        | 75d2c0d9-4343-4ac7-8dbe-b72893267201 |
-    | ipv4_address_scope        |                                      |
-    | ipv6_address_scope        | 040256da-f8a9-4009-9062-043b70d9e8a6 |
+    | dns_domain                | None                                 |
+    | id                        | 28c08355-cb8f-4b1b-b5fd-f5442e531b28 |
+    | ipv4_address_scope        | None                                 |
+    | ipv6_address_scope        | ee2ee196-156c-424e-81e5-4d029c66190a |
     | is_default                | False                                |
     | mtu                       | 1500                                 |
     | name                      | public                               |
+    | port_security_enabled     | True                                 |
+    | project_id                | 6de6f29dcf904ab8a12e8ca558f532e9     |
     | provider:network_type     | flat                                 |
     | provider:physical_network | external                             |
-    | provider:segmentation_id  |                                      |
-    | router:external           | True                                 |
+    | provider:segmentation_id  | None                                 |
+    | qos_policy_id             | None                                 |
+    | revision_number           | 6                                    |
+    | router:external           | External                             |
+    | segments                  | None                                 |
     | shared                    | False                                |
     | status                    | ACTIVE                               |
-    | subnets                   | 98cd2ae1-cf7d-48f3-b5e0-c94efe3c2562 |
-    | tags                      |                                      |
-    | tenant_id                 | 4a0a30294e954953a41a9791d4e7f437     |
-    | updated_at                | 2016-04-26T09:44:10                  |
+    | subnets                   | 77551166-fb97-4ea5-912a-c17c75a05eda |
+    | updated_at                | 2017-02-27T10:23:00Z                 |
     +---------------------------+--------------------------------------+
 
 # View from the other side
 
-We have now prepared everything on the admin side of things, so let our user start to configure their networking:
+We have now prepared everything on the admin side of things, so let our users start to configure their networking.
+The commands in this section are meant to be executed with user credentials:
 
-    $ neutron net-create pronet
-    Created a new network:
-    +-------------------------+--------------------------------------+
-    | Field                   | Value                                |
-    +-------------------------+--------------------------------------+
-    | admin_state_up          | True                                 |
-    | availability_zone_hints |                                      |
-    | availability_zones      |                                      |
-    | created_at              | 2016-04-27T12:45:53                  |
-    | description             |                                      |
-    | id                      | ab20362b-b4ca-4490-9793-8b5759a34ee3 |
-    | ipv4_address_scope      |                                      |
-    | ipv6_address_scope      |                                      |
-    | mtu                     | 1450                                 |
-    | name                    | pronet                               |
-    | router:external         | False                                |
-    | shared                  | False                                |
-    | status                  | ACTIVE                               |
-    | subnets                 |                                      |
-    | tags                    |                                      |
-    | tenant_id               | a1380d88a6f44898be538f7b2ba1814f     |
-    | updated_at              | 2016-04-27T12:45:53                  |
-    +-------------------------+--------------------------------------+
+    $ openstack network create mynet
+    +---------------------------+--------------------------------------+
+    | Field                     | Value                                |
+    +---------------------------+--------------------------------------+
+    | admin_state_up            | UP                                   |
+    | availability_zone_hints   |                                      |
+    | availability_zones        |                                      |
+    | created_at                | 2017-02-27T10:26:22Z                 |
+    | description               |                                      |
+    | dns_domain                | None                                 |
+    | id                        | 1f20da97-ddd4-40f8-b8d3-6321de8671a0 |
+    | ipv4_address_scope        | None                                 |
+    | ipv6_address_scope        | None                                 |
+    | is_default                | None                                 |
+    | mtu                       | 1450                                 |
+    | name                      | mynet                                |
+    | port_security_enabled     | True                                 |
+    | project_id                | 6de6f29dcf904ab8a12e8ca558f532e9     |
+    | provider:network_type     | None                                 |
+    | provider:physical_network | None                                 |
+    | provider:segmentation_id  | None                                 |
+    | qos_policy_id             | None                                 |
+    | revision_number           | 3                                    |
+    | router:external           | Internal                             |
+    | segments                  | None                                 |
+    | shared                    | False                                |
+    | status                    | ACTIVE                               |
+    | subnets                   |                                      |
+    | updated_at                | 2017-02-27T10:26:22Z                 |
+    +---------------------------+--------------------------------------+
 
 In order to add some IPv6 prefix, simply request one from the default pool:
 
-    $ neutron subnet-create --name subnet6 --ip_version 6 --use-default-subnetpool --ipv6-address-mode slaac --ipv6-ra-mode slaac pronet
-    Created a new subnet:
-    +-------------------+---------------------------------------------------------------------------------+
-    | Field             | Value                                                                           |
-    +-------------------+---------------------------------------------------------------------------------+
-    | allocation_pools  | {"start": "2001:db8:1234:1::2", "end": "2001:db8:1234:1:ffff:ffff:ffff:ffff"}   |
-    | cidr              | 2001:db8:1234:1::/64                                                            |
-    | created_at        | 2016-04-27T12:50:27                                                             |
-    | description       |                                                                                 |
-    | dns_nameservers   |                                                                                 |
-    | enable_dhcp       | True                                                                            |
-    | gateway_ip        | 2001:db8:1234:1::1                                                              |
-    | host_routes       |                                                                                 |
-    | id                | 796d95f8-20e9-40b2-82df-1d50422a5c15                                            |
-    | ip_version        | 6                                                                               |
-    | ipv6_address_mode | slaac                                                                           |
-    | ipv6_ra_mode      | slaac                                                                           |
-    | name              | subnet6                                                                         |
-    | network_id        | ab20362b-b4ca-4490-9793-8b5759a34ee3                                            |
-    | subnetpool_id     | 84367d47-4b17-4ffc-9240-e01695e604eb                                            |
-    | tenant_id         | a1380d88a6f44898be538f7b2ba1814f                                                |
-    | updated_at        | 2016-04-27T12:50:27                                                             |
-    +-------------------+---------------------------------------------------------------------------------+
+    $ openstack subnet create --ip-version 6 --use-default-subnet-pool --ipv6-address-mode slaac --ipv6-ra-mode slaac --network mynet mysubnet
+    +------------------------+--------------------------------------------------------+
+    | Field                  | Value                                                  |
+    +------------------------+--------------------------------------------------------+
+    | allocation_pools       | 2001:db8:1234:1::2-2001:db8:1234:1:ffff:ffff:ffff:ffff |
+    | cidr                   | 2001:db8:1234:1::/64                                   |
+    | created_at             | 2017-02-27T11:14:23Z                                   |
+    | description            |                                                        |
+    | dns_nameservers        |                                                        |
+    | enable_dhcp            | True                                                   |
+    | gateway_ip             | 2001:db8:1234:1::1                                     |
+    | host_routes            |                                                        |
+    | id                     | 193f7620-6c4c-4adc-9bb5-ff73c9b08d59                   |
+    | ip_version             | 6                                                      |
+    | ipv6_address_mode      | slaac                                                  |
+    | ipv6_ra_mode           | slaac                                                  |
+    | name                   | mysubnet                                               |
+    | network_id             | 1f20da97-ddd4-40f8-b8d3-6321de8671a0                   |
+    | project_id             | 6de6f29dcf904ab8a12e8ca558f532e9                       |
+    | revision_number        | 2                                                      |
+    | segment_id             | None                                                   |
+    | service_types          |                                                        |
+    | subnetpool_id          | 4c1661ba-b24c-4fda-8815-3f1fd29281af                   |
+    | updated_at             | 2017-02-27T11:14:23Z                                   |
+    | use_default_subnetpool | true                                                   |
+    +------------------------+--------------------------------------------------------+
 
-We want outside connectivity, so we create a router, add an interface into our project net and set the gateway to be
+Note that the ''--use-default-subnet-pool'' option is broken in OSC <= 3.9.0, if you are seeing an error like
+
+    HttpException: Bad Request, Bad subnets request: a subnetpool must be specified in the absence of a cidr.
+
+then instead specify the subnet pool explicitly with ''--subnet-pool default-pool-ip6''.
+
+Next we want outside connectivity, so we create a router, add an interface into our project net and set the gateway to be
 the public network:
 
-    $ neutron router-create router1
-    Created a new router:
+    $ openstack router create router1
     +-------------------------+--------------------------------------+
     | Field                   | Value                                |
     +-------------------------+--------------------------------------+
-    | admin_state_up          | True                                 |
+    | admin_state_up          | UP                                   |
     | availability_zone_hints |                                      |
     | availability_zones      |                                      |
+    | created_at              | 2017-02-27T12:59:06Z                 |
     | description             |                                      |
-    | external_gateway_info   |                                      |
-    | id                      | 00991f6c-882b-409a-952c-bb358098555c |
+    | distributed             | False                                |
+    | external_gateway_info   | None                                 |
+    | flavor_id               | None                                 |
+    | ha                      | False                                |
+    | id                      | d2db0603-fda2-4305-a1de-e793a36c0770 |
     | name                    | router1                              |
+    | project_id              | 6de6f29dcf904ab8a12e8ca558f532e9     |
+    | revision_number         | None                                 |
     | routes                  |                                      |
     | status                  | ACTIVE                               |
-    | tenant_id               | a1380d88a6f44898be538f7b2ba1814f     |
+    | updated_at              | 2017-02-27T12:59:06Z                 |
     +-------------------------+--------------------------------------+
-    $ neutron router-interface-add router1 796d95f8-20e9-40b2-82df-1d50422a5c15
-    Added interface 703a3bdb-3174-46d4-bc70-a378d2ad41b7 to router router1.
-    $ neutron router-gateway-set router1 public
-    Set gateway for router router1
+    $ openstack router add subnet router1 mysubnet
+    $ openstack router set --external-gateway public router1
 
 Finally we boot an instance and verify that it gets an IPv6 address assigned:
 
-    $ nova boot --flavor 1 --image cirros vm1
-    $ nova list
-    +--------------------------------------+------+--------+------------+-------------+---------------------------------------------+
-    | ID                                   | Name | Status | Task State | Power State | Networks                                    |
-    +--------------------------------------+------+--------+------------+-------------+---------------------------------------------+
-    | 17b2ac04-9a17-45ff-be30-401aa8331a66 | vm1  | ACTIVE | -          | Running     | pronet=2001:db8:1234:1:f816:3eff:fe53:f89e  |
-    +--------------------------------------+------+--------+------------+-------------+---------------------------------------------+
-    $ nova console-log vm1 | grep -A1 -B1 2001
+    $ openstack server create --flavor c1 --image cirros vm1
+    $ openstack server list
+    +--------------------------------------+------+--------+-------------+--------------------------------------------+------------+
+    | ID                                   | Name | Status | Power State | Networks                                   | Image Name |
+    +--------------------------------------+------+--------+-------------+--------------------------------------------+------------+
+    | 17b2ac04-9a17-45ff-be30-401aa8331a66 | vm1  | ACTIVE | Running     | mynet=2001:db8:1234:1:f816:3eff:fe53:f89e  | cirros     |
+    +--------------------------------------+------+--------+-------------+--------------------------------------------+------------+
+    $ openstack console log show vm1 | grep -A1 -B1 2001
     eth0      Link encap:Ethernet  HWaddr FA:16:3E:53:F8:9E
               inet6 addr: 2001:db8:1234:1:f816:3eff:fe53:f89e/64 Scope:Global
               inet6 addr: fe80::f816:3eff:fe53:f89e/64 Scope:Link
@@ -333,8 +369,8 @@ get to the interesting stuff now. First we have to update our ``neutron.conf`` a
 
     [DEFAULT]
     # You may have other plugins enabled here depending on your environment
-    # Important thing is you add "bgp" to the list
-    service_plugins = bgp, router
+    # Important thing is you add the BgpPlugin to the list
+    service_plugins = neutron_dynamic_routing.services.bgp.bgp_plugin.BgpPlugin,neutron.services.l3_router.l3_router_plugin.L3RouterPlugin
     # In case you run into issues, this will also be helpful
     debug = true
 
@@ -343,52 +379,51 @@ Now we can create our first BGP speaker. We set the IP version to 6, select some
 private ASN that we can use for our POC and disable advertising floating IPs, as we
 do not have these for IPv6 anyway:
 
-    # neutron bgp-speaker-create --ip-version 6 --local-as 65001 --advertise-floating-ip-host-routes false bgp1
-    Created a new bgp_speaker:
+    # openstack bgp speaker create --ip-version 6 --local-as 65001 --advertise-floating-ip-host-routes false bgp1
     +-----------------------------------+--------------------------------------+
     | Field                             | Value                                |
     +-----------------------------------+--------------------------------------+
     | advertise_floating_ip_host_routes | False                                |
     | advertise_tenant_networks         | True                                 |
-    | id                                | 09fc7063-89e1-4949-812d-b52eb7eee430 |
+    | id                                | b9547458-7bdd-4738-bd57-a985055fc59c |
     | ip_version                        | 6                                    |
     | local_as                          | 65001                                |
     | name                              | bgp1                                 |
-    | networks                          |                                      |
-    | peers                             |                                      |
-    | tenant_id                         | 4a0a30294e954953a41a9791d4e7f437     |
+    | networks                          | []                                   |
+    | peers                             | []                                   |
+    | project_id                        | c67d6ba16ea2484597061245e5258c1e     |
+    | tenant_id                         | c67d6ba16ea2484597061245e5258c1e     |
     +-----------------------------------+--------------------------------------+
 
 We add our public network to this speaker, indicating that we want to advertise all those
 tenant networks here, which have a router with the public network as gateway. We also
 verify that our tenant network gets listed for advertisement:
 
-    # neutron bgp-speaker-network-add bgp1 public
-    Added network public to BGP speaker bgp1.
-    # neutron bgp-speaker-advertiseroute-list bgp1
-    +----------------------+---------------------+
-    | destination          | next_hop            |
-    +----------------------+---------------------+
-    | 2001:db8:1234:1::/64 | 2001:db8:4321:42::5 |
-    +----------------------+---------------------+
+    # openstack bgp speaker add network bgp1 public
+    # openstack bgp speaker list advertised routes bgp1
+    +----+--------------------+---------------------+
+    | ID | Destination        | Nexthop             |
+    +----+--------------------+---------------------+
+    |    | 2001:db8:1234::/64 | 2001:db8:4321:42::c |
+    +----+--------------------+---------------------+
 
 Assume our external router has the address 2001:db8:4321:e0::1, we configure it as
 BGP peer and add it to our BGP speaker:
 
-    # neutron bgp-peer-create --peer-ip 2001:db8:4321:e0::1 --remote-as 65001 bgp-peer1
-    Created a new bgp_peer:
-    +-----------+--------------------------------------+
-    | Field     | Value                                |
-    +-----------+--------------------------------------+
-    | auth_type | none                                 |
-    | id        | f6461ba4-aac9-41a9-8783-b93570e0a768 |
-    | name      | bgp-peer1                            |
-    | peer_ip   | 2001:db8:4321:e0::1                  |
-    | remote_as | 65001                                |
-    | tenant_id | 4a0a30294e954953a41a9791d4e7f437     |
-    +-----------+--------------------------------------+
-    # neutron bgp-speaker-peer-add bgp1 bgp-peer1
-    Added BGP peer bgp-peer1 to BGP speaker bgp1.
+    # openstack bgp peer create --peer-ip 2001:db8:4321:e0::1 --remote-as 65001 bgp-peer1
+    +------------+--------------------------------------+
+    | Field      | Value                                |
+    +------------+--------------------------------------+
+    | auth_type  | none                                 |
+    | id         | 0183260e-b1d0-40ae-994f-075668b99676 |
+    | name       | bgp-peer1                            |
+    | peer_ip    | 2001:db8:4321:e0::1                  |
+    | project_id | c67d6ba16ea2484597061245e5258c1e     |
+    | remote_as  | 65001                                |
+    | tenant_id  | c67d6ba16ea2484597061245e5258c1e     |
+    +------------+--------------------------------------+
+    # openstack bgp speaker add peer bgp1 bgp-peer1
+    #
 
 # The missing link
 
@@ -403,7 +438,7 @@ needs some tuning:
 
     [BGP]
     # BGP speaker driver class to be instantiated. (string value)
-    bgp_speaker_driver = neutron.services.bgp.driver.ryu.driver.RyuBgpDriver
+    bgp_speaker_driver = neutron_dynamic_routing.services.bgp.agent.driver.ryu.driver.RyuBgpDriver
 
     # 32-bit BGP identifier, typically an IPv4 address owned by the system running
     # the BGP DrAgent. (string value)
@@ -412,9 +447,9 @@ needs some tuning:
 Again you will have to restart the agent in order for it to pick up the new
 configuration. If all goes well, the agent should register itself in your setup:
 
-    # neutron agent-list
+    # openstack network agent list
     +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
-    | id                                   | agent_type                | host         | availability_zone | alive | admin_state_up | binary                    |
+    | ID                                   | Agent Type                | Host         | Availability Zone | Alive | State          | Binary                    |
     +--------------------------------------+---------------------------+--------------+-------------------+-------+----------------+---------------------------+
     | 12780c43-084c-4417-aa7f-2e1c505639ab | L3 agent                  | network-node | nova              | :-)   | True           | neutron-l3-agent          |
     | 3f427d52-d2b3-46ee-b372-f83b6f9a3474 | Open vSwitch agent        | compute-node |                   | :-)   | True           | neutron-openvswitch-agent |
@@ -426,6 +461,7 @@ As the final step, use the agent id from above and tell the agent that it
 should host our BGP speaker:
 
     # neutron bgp-dragent-speaker-add 68d6e83c-db04-4711-b031-44cf3fb51bb7 bgp1
+    neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.
     Associated BGP speaker bgp1 to the Dynamic Routing agent.
 
 And that will be all. Well, at least from the OpenStack side of things.
@@ -473,10 +509,12 @@ In case that things do not work out as expected, here are a couple of things you
   to allow access via IPv6, too.
 - Nova metadata are available via IPv4 only. So if you deploy an instance that has only an IPv6
   address, it will not be able to receive e.g. the SSH keys that should be installed. Either use
-  config drive for that or enable a dummy IPv4 network that will allow connectivity to the
-  metadata server.
+  config drive for that or create a dummy IPv4 subnet that will allow connectivity between your
+  instance and the metadata server.
 - Most pre-built cloud images are also hardcoded to wait during the boot phase until they have
   received an IPv4 address on their primary interface via DHCP. If you want to avoid this delay
   (which can mean it takes a couple of minutes until you are able to access your instance), you
   either have to build your own image that does some smarter network setup or again you setup
   your dummy IPv4 network.
+- Some of the `openstack` commands being used in the examples have not yet been released at the
+  time of this writing, see in particular this review: https://review.openstack.org/340763
